@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracing Arabic Letters from Image</title>
+<style>
+  body {
+    text-align: center;
+    font-family: sans-serif;
+    background: #fafafa;
+  }
+  canvas {
+    border: 2px solid #333;
+    border-radius: 10px;
+    background: white;
+    touch-action: none;
+  }
+  .buttons { margin: 15px; }
+  button {
+    font-size: 30px;
+    margin: 5px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+  }
+  /* #homeBtn {
+    background: #333;
+    color: white;
+    font-size: 24px;
+    margin-top: 10px;
+  } */
+
+
+    #app { text-align: center; width: 100%; max-width: 700px; }
+
+    h1 { font-size: 1.6rem; margin-bottom: 1rem; }
+
+
+/* Home button styling */
+    .home-button {
+      display: inline-block;
+      background: #60a5fa;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 15px;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+/* Center the button */
+body {
+  text-align: center;
+}
+
+    .home-button:hover { 
+      transform: scale(1.05);
+      background: #3b82f6;
+    }
+
+#nextLetterBtn {
+  background: #10b981;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 20px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  transition: transform 0.2s, background 0.2s;
+}
+#nextLetterBtn:hover {
+  transform: scale(1.05);
+  background: #059669;
+}
+
+
+</style>
+</head>
+<body>
+<a href="https://feynfou.github.io/DarijaToons-Hub/" class="home-button">  الرئيسية 🏠 Home</a>
+
+  <h1> </h1>
+
+<!-- Hidden Buttons for Each Letter (no text shown) -->
+<!-- <div class="buttons" style="display: none;">
+  <div class="letter-buttons">
+
+  <button data-letter="alif"></button>
+  <button data-letter="ba"></button>
+  <button data-letter="ta"></button>
+  <button data-letter="tha"></button>
+  <button data-letter="jeem"></button>
+  <button data-letter="haa"></button>
+  <button data-letter="khaa"></button>
+  <button data-letter="dal"></button>
+  <button data-letter="thal"></button>
+  <button data-letter="ra"></button>
+  <button data-letter="zay"></button>
+  <button data-letter="seen"></button>
+  <button data-letter="sheen"></button>
+  <button data-letter="sad"></button>
+  <button data-letter="dad"></button>
+  <button data-letter="taa2"></button>
+  <button data-letter="zaa"></button>
+  <button data-letter="ain"></button>
+  <button data-letter="ghain"></button>
+  <button data-letter="fa"></button>
+  <button data-letter="qaf"></button>
+  <button data-letter="kaf"></button>
+  <button data-letter="lam"></button>
+  <button data-letter="meem"></button>
+  <button data-letter="noon"></button>
+  <button data-letter="ha"></button>
+  <button data-letter="waw"></button>
+  <button data-letter="ya"></button>
+  </div>
+  
+  <button id="nextLetterBtn">🔁 حرف آخر</button>
+
+</div> -->
+
+<!-- next letter button -->
+<!-- <canvas id="traceCanvas" width="400" height="400"></canvas> -->
+
+<div class="buttons">
+    <div class="letter-buttons" style="display: none;">
+    <button data-letter="alif">ا</button>
+    <button data-letter="ba">ب</button>
+    <button data-letter="ta">ت</button>
+    <button data-letter="tha">ث</button>
+    <button data-letter="jeem"></button>
+  <button data-letter="haa"></button>
+  <button data-letter="khaa"></button>
+  <button data-letter="dal"></button>
+  <button data-letter="thal"></button>
+  <button data-letter="ra"></button>
+  <button data-letter="zay"></button>
+  <button data-letter="seen"></button>
+  <button data-letter="sheen"></button>
+  <button data-letter="sad"></button>
+  <button data-letter="dad"></button>
+  <button data-letter="taa2"></button>
+  <button data-letter="zaa"></button>
+  <button data-letter="ain"></button>
+  <button data-letter="ghain"></button>
+  <button data-letter="fa"></button>
+  <button data-letter="qaf"></button>
+  <button data-letter="kaf"></button>
+  <button data-letter="lam"></button>
+  <button data-letter="meem"></button>
+  <button data-letter="noon"></button>
+  <button data-letter="ha"></button>
+  <button data-letter="waw"></button>
+  <button data-letter="ya"></button>
+  </div>
+  <div>
+    <button id="nextLetterBtn">🔁 حرف آخر</button>
+  </div>
+</div>
+
+<canvas id="traceCanvas" width="400" height="400"></canvas>
+
+
+<script>
+const canvas = document.getElementById("traceCanvas");
+const ctx = canvas.getContext("2d");
+
+// hidden canvas for letter pixels
+const letterCanvas = document.createElement('canvas');
+letterCanvas.width = canvas.width;
+letterCanvas.height = canvas.height;
+const letterCtx = letterCanvas.getContext('2d');
+
+let drawing = false;
+let currentLetter = "alif";
+let letterPixels = 0;
+let completed = false;
+
+const letters = [
+  "alif","ba","ta","tha","jeem","haa","khaa","dal","thal","ra","zay",
+  "seen","sheen","sad","dad","taa2","zaa","ain","ghain","fa","qaf",
+  "kaf","lam","meem","noon","ha","waw","ya"
+];
+
+// pick random letter
+function getRandomLetter() {
+  return letters[Math.floor(Math.random() * letters.length)];
+}
+
+// Load letter image
+function loadLetter(letter) {
+  const img = new Image();
+  img.src = `images/${letter}.jpg`;
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    letterCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+    letterCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const imageData = letterCtx.getImageData(0,0,canvas.width,canvas.height);
+    letterPixels = 0;
+    const data = imageData.data;
+    for(let i=0;i<data.length;i+=4){
+      const brightness = (data[i]+data[i+1]+data[i+2])/3;
+      if(brightness<120) letterPixels++;
+    }
+
+    completed = false;
+    ctx.globalAlpha = 0.2;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+  };
+}
+
+// Draw user stroke
+function drawStroke(x, y) {
+  ctx.beginPath();
+  ctx.arc(x, y, 18, 0, 2*Math.PI);
+  ctx.fillStyle = "rgba(0,100,255,0.9)";
+  ctx.fill();
+}
+
+// Emoji
+function showEmoji() {
+  ctx.font = "80px serif";
+  ctx.fillStyle = "orange";
+  ctx.fillText("🎉", canvas.width / 2 - 40, canvas.height / 2 + 30);
+}
+
+
+// ===== Fun Confetti Explosion =====
+let confettis = [];
+const shapes = ["circle", "star", "heart", "triangle"]; // possible shapes
+
+function startConfetti() {
+  confettis = [];
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  for (let i = 0; i < 100; i++) {
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = Math.random() * 8 + 4; // explosion speed
+    confettis.push({
+      x: centerX,
+      y: centerY,
+      r: Math.random() * 6 + 3,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      rotation: Math.random() * 2 * Math.PI,
+      rotationSpeed: (Math.random() - 0.5) * 0.2
+    });
+  }
+  requestAnimationFrame(animateConfetti);
+}
+
+function drawShape(c) {
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(c.rotation);
+  ctx.fillStyle = c.color;
+  switch(c.shape) {
+    case "circle":
+      ctx.beginPath();
+      ctx.arc(0, 0, c.r, 0, 2 * Math.PI);
+      ctx.fill();
+      break;
+    case "star":
+      ctx.beginPath();
+      for(let i=0;i<5;i++){
+        const angle = i * 2 * Math.PI / 5 - Math.PI/2;
+        const x = Math.cos(angle) * c.r;
+        const y = Math.sin(angle) * c.r;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      break;
+    case "heart":
+      ctx.beginPath();
+      const topCurveHeight = c.r * 0.3;
+      ctx.moveTo(0, topCurveHeight);
+      ctx.bezierCurveTo(0, topCurveHeight - c.r, -c.r, topCurveHeight - c.r, -c.r, topCurveHeight);
+      ctx.bezierCurveTo(-c.r, topCurveHeight + c.r, 0, topCurveHeight + c.r*1.5, 0, topCurveHeight + c.r*2);
+      ctx.bezierCurveTo(0, topCurveHeight + c.r*1.5, c.r, topCurveHeight + c.r, c.r, topCurveHeight);
+      ctx.bezierCurveTo(c.r, topCurveHeight - c.r, 0, topCurveHeight - c.r, 0, topCurveHeight);
+      ctx.fill();
+      break;
+    case "triangle":
+      ctx.beginPath();
+      ctx.moveTo(0, -c.r);
+      ctx.lineTo(c.r, c.r);
+      ctx.lineTo(-c.r, c.r);
+      ctx.closePath();
+      ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+
+function animateConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Redraw faint letter as background
+  ctx.globalAlpha = 0.2;
+  ctx.drawImage(letterCanvas, 0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1;
+
+  confettis.forEach((c) => {
+    drawShape(c);
+    // update position with gravity
+    c.x += c.dx;
+    c.y += c.dy;
+    c.dy += 0.2; // gravity
+    c.dx *= 0.99; // slow horizontal
+    c.rotation += c.rotationSpeed;
+  });
+
+  confettis = confettis.filter(c => c.y - c.r < canvas.height); // remove off-canvas
+
+  if (confettis.length > 0) requestAnimationFrame(animateConfetti);
+}
+ 
+
+
+//     // ===== 1st Confetti Effect =====
+// let confettis = [];
+
+// function startConfetti() {
+//   confettis = [];
+//   for (let i = 0; i < 100; i++) {
+//     confettis.push({
+//       x: Math.random() * canvas.width,
+//       y: Math.random() * -canvas.height,
+//       r: Math.random() * 6 + 3,
+//       dx: (Math.random() - 0.5) * 2,
+//       dy: Math.random() * 3 + 2,
+//       color: `hsl(${Math.random() * 360}, 80%, 60%)`
+//     });
+//   }
+//   requestAnimationFrame(animateConfetti);
+// }
+
+// function animateConfetti() {
+//   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+//   // Redraw faint letter as background
+//   ctx.globalAlpha = 0.2;
+//   ctx.drawImage(letterCanvas, 0, 0, canvas.width, canvas.height);
+//   ctx.globalAlpha = 1;
+
+//   confettis.forEach((c) => {
+//     ctx.beginPath();
+//     ctx.arc(c.x, c.y, c.r, 0, 2 * Math.PI);
+//     ctx.fillStyle = c.color;
+//     ctx.fill();
+//     c.x += c.dx;
+//     c.y += c.dy;
+//     c.dy += 0.05; // gravity
+//   });
+
+//   confettis = confettis.filter((c) => c.y < canvas.height);
+
+//   if (confettis.length > 0) {
+//     requestAnimationFrame(animateConfetti);
+//   }
+// }
+
+
+
+
+
+// Check how much of the letter is traced
+function checkCompletion() {
+  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const letterData = letterCtx.getImageData(0,0,canvas.width,canvas.height).data;
+
+  let covered = 0;
+  for(let i=0;i<letterData.length;i+=4){
+    const brightness = (letterData[i]+letterData[i+1]+letterData[i+2])/3;
+    if(brightness<120){
+      const userAlpha = imageData[i+3];
+      if(userAlpha>200){
+        covered++;
+      }
+    }
+  }
+
+  if(!completed && covered/letterPixels >= 0.90){
+    completed = true;
+    
+       showEmoji();
+       startConfetti();
+    setTimeout(()=>{
+      currentLetter = getRandomLetter();
+      loadLetter(currentLetter);
+    },1500);
+  }
+}
+
+// Event listeners
+canvas.addEventListener("pointerdown", e=>{drawing=true;});
+canvas.addEventListener("pointermove", e=>{
+  if(!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  drawStroke(x, y);
+  checkCompletion();
+});
+canvas.addEventListener("pointerup", ()=>{drawing=false;});
+
+// Initialize with random letter
+currentLetter = getRandomLetter();
+loadLetter(currentLetter);
+
+// Initialize
+loadLetter(currentLetter);
+
+// Random letter button logic
+const letterButtons = Array.from(document.querySelectorAll("[data-letter]"));
+document.getElementById("nextLetterBtn").addEventListener("click", () => {
+  const randomBtn = letterButtons[Math.floor(Math.random() * letterButtons.length)];
+  currentLetter = randomBtn.dataset.letter;
+  loadLetter(currentLetter);
+});
+
+</script>
+</body>
+</html>
